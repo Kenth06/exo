@@ -3,6 +3,8 @@ export interface LoaderPartInput {
   bytes: ArrayBuffer;
   /** Plate number inside a .gcode.3mf; the first plate when missing. */
   plate?: number;
+  /** Build the plate side (bottom surfaces, flat first layer) so the part can be shown flipped. */
+  flipped?: boolean;
 }
 
 export interface LoaderRequest {
@@ -20,6 +22,7 @@ export interface LoadedMesh {
 
 export interface LoadedPart {
   name: string;
+  flipped: boolean;
   plates: number[];
   plate: number;
   meshes: LoadedMesh[];

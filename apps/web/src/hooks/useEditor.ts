@@ -116,6 +116,7 @@ export const useEditor = (projectId: string) => {
 
   // Re-parse whenever the files, chosen plates or support visibility change.
   const plateKey = settings.plate.join(",");
+  const flipKey = settings.flipped.join(",");
   const sourceKey = sources.map((s) => s.file.id).join(",");
   useEffect(() => {
     if (sources.length === 0) {
@@ -126,7 +127,12 @@ export const useEditor = (projectId: string) => {
     setParseError(null);
     setProgress({ fraction: 0, stage: "Reading G-code" });
     loadParts(
-      sources.map((s, i) => ({ name: s.file.filename, bytes: s.bytes, plate: settings.plate[i] })),
+      sources.map((s, i) => ({
+        name: s.file.filename,
+        bytes: s.bytes,
+        plate: settings.plate[i],
+        flipped: !!settings.flipped[i],
+      })),
       {
         includeSupports: settings.showSupports,
         onProgress: (fraction, stage) => !cancelled && setProgress({ fraction, stage }),
@@ -162,7 +168,7 @@ export const useEditor = (projectId: string) => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sourceKey, plateKey, settings.showSupports]);
+  }, [sourceKey, plateKey, flipKey, settings.showSupports]);
 
   const upload = useCallback(
     async (files: File[]): Promise<string[]> => {
@@ -203,6 +209,7 @@ export const useEditor = (projectId: string) => {
         update((s) => ({
           partColors: s.partColors.filter((_, i) => i !== index),
           plate: s.plate.filter((_, i) => i !== index),
+          flipped: s.flipped.filter((_, i) => i !== index),
         }));
       }
     },
@@ -216,6 +223,16 @@ export const useEditor = (projectId: string) => {
         while (partColors.length <= part) partColors.push([]);
         partColors[part]![tool] = filament;
         return { partColors };
+      }),
+    [update],
+  );
+
+  const setFlipped = useCallback(
+    (part: number, flipped: boolean) =>
+      update((s) => {
+        const f = [...s.flipped];
+        f[part] = flipped;
+        return { flipped: f };
       }),
     [update],
   );
@@ -256,6 +273,7 @@ export const useEditor = (projectId: string) => {
     removeFile,
     setPartColor,
     setPlate,
+    setFlipped,
   };
 };
 

@@ -43,6 +43,13 @@ export const PartsPanel = ({ editor, onFiles }: { editor: Editor; onFiles: (f: F
               />
             )}
             <div className="space-y-2">
+              <Switch
+                size="sm"
+                label="Show plate side up"
+                labelTooltip="For parts printed face-down: flips the part so the side that touched the bed faces the camera."
+                checked={!!settings.flipped[i]}
+                onClick={() => editor.setFlipped(i, !settings.flipped[i])}
+              />
               {Array.from({ length: tools }, (_, t) => (
                 <FilamentPicker
                   key={t}

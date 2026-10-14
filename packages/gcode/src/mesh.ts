@@ -26,6 +26,10 @@ export interface MeshOptions {
   includeInfill?: boolean;
   /** Vertex budget across all meshes; the profile resolution drops to fit it. */
   maxVertices?: number;
+  /** Draw bottom surfaces: needed when the part is shown flipped, plate side up. */
+  includeBottom?: boolean;
+  /** Squash the underside of first-layer beads flat, the way they print against the bed. */
+  flattenBedSide?: boolean;
 }
 
 const COLLINEAR_EPS = 0.004;
@@ -33,7 +37,7 @@ const SHARP_CORNER_DOT = 0.5;
 
 const visible = (f: number, opts: MeshOptions) => {
   if (f === Feature.Excluded || f === Feature.Preamble) return false;
-  if (f === Feature.Bottom) return false;
+  if (f === Feature.Bottom) return !!opts.includeBottom;
   if (f === Feature.Infill) return !!opts.includeInfill;
   if (f === Feature.Support) return !!opts.includeSupports;
   return true;
@@ -211,9 +215,12 @@ export const buildBeadMeshes = (tp: Toolpath, opts: MeshOptions = {}): MeshResul
       const cz = P[v * 3 + 2]! - hh;
       const invW = 1 / (s.w[v]! / 2);
       const invH = 1 / hh;
+      // A bead resting on the bed (bottom at z ~ 0) is flat underneath, not round.
+      const onBed = !!opts.flattenBedSide && cz - hh < 0.03;
       for (let k = 0; k < sides; k++) {
-        const lat = cosK[k]! * hw;
-        const up = sinK[k]! * hh;
+        const flat = onBed && sinK[k]! < -1e-6;
+        const lat = flat ? Math.sign(cosK[k]!) * hw : cosK[k]! * hw;
+        const up = flat ? -hh : sinK[k]! * hh;
         const px = cx + sx * lat;
         const py = cy + sy * lat;
         const pz = cz + up;
@@ -222,8 +229,8 @@ export const buildBeadMeshes = (tp: Toolpath, opts: MeshOptions = {}): MeshResul
         o.p[vi] = px;
         o.p[vi + 1] = pz;
         o.p[vi + 2] = -py;
-        let nl = cosK[k]! * invW;
-        let nu = sinK[k]! * invH;
+        let nl = flat ? 0 : cosK[k]! * invW;
+        let nu = flat ? -1 : sinK[k]! * invH;
         const nlen = Math.hypot(nl, nu) || 1;
         nl /= nlen;
         nu /= nlen;

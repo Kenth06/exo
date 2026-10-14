@@ -59,6 +59,7 @@ export const smoothPartFromSpec = (spec: RevolvedSpec): LoadedPart => {
   }
   return {
     name: `${spec.name} (STL)`,
+    flipped: false,
     plates: [1],
     plate: 1,
     meshes: [{ tool: 0, positions, normals, indices }],

@@ -128,6 +128,22 @@ describe("buildBeadMeshes", () => {
     expect(res.bounds.max[1]).toBeCloseTo(13 * 0.24, 2);
   });
 
+  it("adds bottom surfaces and a flat bed side for parts shown plate side up", () => {
+    const flipped = buildBeadMeshes(tp, { includeBottom: true, flattenBedSide: true });
+    expect(flipped.triangles).toBeGreaterThan(res.triangles);
+    const m = flipped.meshes[0]!;
+    let onBed = 0;
+    let facingDown = 0;
+    for (let v = 0; v < m.positions.length / 3; v++) {
+      if (Math.abs(m.positions[v * 3 + 1]!) < 1e-4) {
+        onBed++;
+        if (m.normals[v * 3 + 1]! < -32000) facingDown++;
+      }
+    }
+    expect(onBed).toBeGreaterThan(1000);
+    expect(facingDown / onBed).toBeGreaterThan(0.95);
+  });
+
   it("drops the profile resolution to stay within the vertex budget", () => {
     const low = buildBeadMeshes(tp, { maxVertices: 1000 });
     expect(low.sides).toBe(4);

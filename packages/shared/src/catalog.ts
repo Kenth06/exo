@@ -366,6 +366,8 @@ export interface ProjectSettings {
   platforms: string[];
   showSupports: boolean;
   plate: number[];
+  /** Per part: show it upside down, plate side up (for prints made face-down on the bed). */
+  flipped: boolean[];
   video: { motion: MotionId; duration: (typeof VIDEO_DURATIONS)[number]; aspect: VideoAspect };
 }
 
@@ -378,6 +380,7 @@ export const DEFAULT_SETTINGS: ProjectSettings = {
   platforms: ["etsy"],
   showSupports: false,
   plate: [],
+  flipped: [],
   video: { motion: "orbit", duration: 8, aspect: "4:5" },
 };
 

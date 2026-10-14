@@ -180,7 +180,14 @@ export class Stage {
         group.add(mesh);
       }
       const { min, max } = part.bounds;
-      group.position.set(cursor - min[0], -min[1], -(min[2] + max[2]) / 2);
+      if (part.flipped) {
+        // Turned over left-to-right (about Z): (x, y, z) -> (-x, -y, z). Text printed face-down then reads
+        // upright from the front, as if you picked the print off the bed and turned it toward you.
+        group.rotation.z = Math.PI;
+        group.position.set(cursor + max[0], max[1], -(min[2] + max[2]) / 2);
+      } else {
+        group.position.set(cursor - min[0], -min[1], -(min[2] + max[2]) / 2);
+      }
       cursor += widths[i]! + PART_GAP_MM;
       this.model.add(group);
       this.parts.push({ group, meshes });

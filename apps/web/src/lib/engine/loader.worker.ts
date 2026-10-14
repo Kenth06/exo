@@ -23,9 +23,15 @@ self.addEventListener("message", (ev: MessageEvent<LoaderRequest>) => {
         fraction: (index + 0.85) / parts.length,
         stage: `Building layer lines for ${part.name}`,
       });
-      const mesh = buildBeadMeshes(tp, { includeSupports, maxVertices: budget });
+      const mesh = buildBeadMeshes(tp, {
+        includeSupports,
+        maxVertices: budget,
+        includeBottom: !!part.flipped,
+        flattenBedSide: !!part.flipped,
+      });
       out.push({
         name: part.name,
+        flipped: !!part.flipped,
         plates: plates.map((p) => p.plate),
         plate: plate.plate,
         meshes: mesh.meshes.map((m) => ({

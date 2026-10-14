@@ -30,12 +30,45 @@ const corners = (box: Box3) => {
  * Place the camera so the whole box is visible with the requested fill, regardless of aspect ratio,
  * and center the object's projection in the frame. Nothing is ever cropped.
  */
-export const frameBox = (camera: PerspectiveCamera, box: Box3, shot: Shot) => {
+/** 0 for a part at least 35% as tall as it is wide, rising to 1 for a part with no height (a sticker). */
+export const flatness = (size: Vector3) => {
+  const footprint = Math.max(size.x, size.z, 1e-6);
+  return MathUtils.clamp(1 - size.y / footprint / 0.35, 0, 1);
+};
+
+export const frameBox = (camera: PerspectiveCamera, box: Box3, requested: Shot) => {
+  const size = box.getSize(new Vector3());
+  const center = box.getCenter(new Vector3());
+  // Flat parts (letters, coasters, tags) seen from a low angle are a thin sliver on a big table:
+  // raise the camera toward a three-quarter top view and let the part fill more of the frame.
+  const f = flatness(size);
+  const shot: Shot =
+    f > 0 && requested.elevation < 80
+      ? {
+          ...requested,
+          elevation: Math.max(requested.elevation, (requested.detail ? 38 : 22) + 28 * f),
+          fill: Math.min(0.9, requested.fill + 0.08 * f),
+        }
+      : requested;
   const az = MathUtils.degToRad(shot.azimuth);
   const el = MathUtils.degToRad(Math.min(shot.elevation, 89));
   const dir = new Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el));
-  const size = box.getSize(new Vector3());
-  const center = box.getCenter(new Vector3());
+
+  if (shot.detail && f > 0.5) {
+    // Close-up on the top face near the front edge, where the layer pattern and the edge both show.
+    const horizontal = new Vector3(dir.x, 0, dir.z).normalize();
+    const target = center.clone().addScaledVector(horizontal, Math.max(size.x, size.z) * 0.15);
+    target.y = box.max.y;
+    const span = Math.max(8, Math.max(size.x, size.z) * 0.28);
+    const dist = (span / 2 / Math.tan(MathUtils.degToRad(camera.fov / 2))) * (shot.distanceScale ?? 1);
+    camera.position.copy(target).addScaledVector(dir, dist);
+    camera.near = dist / 50;
+    camera.far = dist * 400;
+    camera.lookAt(target);
+    camera.updateProjectionMatrix();
+    camera.updateMatrixWorld();
+    return target;
+  }
 
   if (shot.detail) {
     // Close-up on the outer wall at mid height, facing the camera.
