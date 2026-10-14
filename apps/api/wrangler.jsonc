@@ -9,8 +9,7 @@
     {
       "binding": "DB",
       "database_name": "exo",
-      // Replace with the id printed by `wrangler d1 create exo` before deploying.
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "82cd7644-1a11-4dd6-9a13-93239b204f0a",
       "migrations_dir": "drizzle/migrations",
     },
   ],
