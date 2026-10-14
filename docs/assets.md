@@ -2,10 +2,10 @@
 
 Photographic assets live in `apps/web/public` and load on demand per scene (`src/lib/engine/assets.ts`).
 
-| Folder | What | Source |
-| --- | --- | --- |
-| `env/*.hdr` | 1k HDRIs: lighting, reflections and the blurred background behind sets | [Poly Haven](https://polyhaven.com) (CC0): studio_small_08, studio_small_03, brown_photostudio_02, photo_studio_loft_hall, artist_workshop |
-| `surfaces/*_{diff,nor,rough}.webp` | 1024 px PBR maps for tabletops and the plinth | Poly Haven scans (CC0): white_oak_veneer, wood_table_worn, concrete_floor_02, terrazzo_tiles, plywood, wood_cabinet_worn_long, rough_linen (normal). Baked in Blender: marble-white, marble-black, quartz, slate, linen color |
+| Folder                             | What                                                                   | Source                                                                                                                                                                                                                        |
+| ---------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `env/*.hdr`                        | 1k HDRIs: lighting, reflections and the blurred background behind sets | [Poly Haven](https://polyhaven.com) (CC0): studio_small_08, studio_small_03, brown_photostudio_02, photo_studio_loft_hall, artist_workshop                                                                                    |
+| `surfaces/*_{diff,nor,rough}.webp` | 1024 px PBR maps for tabletops and the plinth                          | Poly Haven scans (CC0): white_oak_veneer, wood_table_worn, concrete_floor_02, terrazzo_tiles, plywood, wood_cabinet_worn_long, rough_linen (normal). Baked in Blender: marble-white, marble-black, quartz, slate, linen color |
 
 ## Rebuilding them with Blender
 
