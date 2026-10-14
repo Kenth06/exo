@@ -84,6 +84,15 @@ importers:
       three:
         specifier: ^0.186.1
         version: 0.186.1
+      three-gpu-pathtracer:
+        specifier: ^0.0.27
+        version: 0.0.27(three-mesh-bvh@0.9.16(three@0.186.1))(three@0.186.1)(xatlas-web@0.1.0)
+      three-mesh-bvh:
+        specifier: ^0.9.16
+        version: 0.9.16(three@0.186.1)
+      xatlas-web:
+        specifier: ^0.1.0
+        version: 0.1.0
       zod:
         specifier: ^4.6.7
         version: 4.6.7
@@ -2216,6 +2225,18 @@ packages:
     resolution: {integrity: sha512-uxc/zpqFg6x7C8vOE7lh6Lbda8eEL9zmVm/PLeTPBRhh1xCgdWaQ+J1CUieGpIfm2HdtsUpRv+HshiasBMcc6A==}
     engines: {node: '>=6'}
 
+  three-gpu-pathtracer@0.0.27:
+    resolution: {integrity: sha512-NLUYnL9nSLcUFurIHHLHbnmpKLaXi8JbGqfTeWRSx4h+l7Ndpllwj2DK2uOYTSUaN5+PuZ1JRqv1ynHEB1XCwQ==}
+    peerDependencies:
+      three: '>=0.185.0'
+      three-mesh-bvh: '>=0.9.15'
+      xatlas-web: ^0.1.0
+
+  three-mesh-bvh@0.9.16:
+    resolution: {integrity: sha512-2RK+5MJOaiHJhopURn2CUkOHiF3tFloD0uZBfhebV0CKB7mgVLpWUWaDpOyhNJRDkKKe7x4rRfTHZ32GwpXdkw==}
+    peerDependencies:
+      three: '>= 0.159.0'
+
   three@0.186.1:
     resolution: {integrity: sha512-blFeqb49wRCSGUGj7gtpfnSGHy2lwDk94RhUmS1c/hTby70kvChbWpkJ4Pm1390LqzzvTmzgXKHPEafJwCb8jA==}
 
@@ -2474,6 +2495,9 @@ packages:
         optional: true
       utf-8-validate:
         optional: true
+
+  xatlas-web@0.1.0:
+    resolution: {integrity: sha512-PprVfuXbaIskxLTLBUQRaWfgSy9xUQqAMIRooOw0P6NYqwgh6T0voeer6+Z5M7AFt5SGXUybuww/uDGs1yw8vQ==}
 
   youch-core@0.3.3:
     resolution: {integrity: sha512-ho7XuGjLaJ2hWHoK8yFnsUGy2Y5uDpqSTq1FkHLK4/oqKtyUU1AFbOOxY4IpC9f0fTLjwYbslUz0Po5BpD1wrA==}
@@ -4025,6 +4049,16 @@ snapshots:
 
   tapable@2.3.3: {}
 
+  three-gpu-pathtracer@0.0.27(three-mesh-bvh@0.9.16(three@0.186.1))(three@0.186.1)(xatlas-web@0.1.0):
+    dependencies:
+      three: 0.186.1
+      three-mesh-bvh: 0.9.16(three@0.186.1)
+      xatlas-web: 0.1.0
+
+  three-mesh-bvh@0.9.16(three@0.186.1):
+    dependencies:
+      three: 0.186.1
+
   three@0.186.1: {}
 
   tinybench@2.9.0: {}
@@ -4225,6 +4259,8 @@ snapshots:
       - utf-8-validate
 
   ws@8.21.0: {}
+
+  xatlas-web@0.1.0: {}
 
   youch-core@0.3.3:
     dependencies:

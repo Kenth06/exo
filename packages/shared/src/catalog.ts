@@ -352,7 +352,11 @@ export type VideoAspect = keyof typeof VIDEO_ASPECTS;
 export const MAX_UPLOAD_BYTES = 100 * 1024 * 1024;
 export const MAX_PARTS = 4;
 
+export type RenderQuality = "photo" | "fast";
+
 export interface ProjectSettings {
+  /** photo: path traced (slow, photographic). fast: the raster preview at full size. */
+  quality: RenderQuality;
   /** Filament per part per tool: partColors[part][tool] = filament id. */
   partColors: string[][];
   /** Extra color variants: each variant swaps the first part's first tool color. */
@@ -366,6 +370,7 @@ export interface ProjectSettings {
 }
 
 export const DEFAULT_SETTINGS: ProjectSettings = {
+  quality: "photo",
   partColors: [],
   variants: [],
   scene: "white-sweep",

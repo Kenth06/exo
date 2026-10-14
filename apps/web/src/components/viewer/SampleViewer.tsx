@@ -52,7 +52,14 @@ export const SampleViewer = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage, colorKey]);
 
-  useEffect(() => stage?.setScene(scene), [stage, scene]);
+  // Dev-only handle for inspecting the renderer from the console.
+  useEffect(() => {
+    if (import.meta.env.DEV && stage) (window as unknown as { exoStage?: Stage }).exoStage = stage;
+  }, [stage]);
+
+  useEffect(() => {
+    void stage?.setScene(scene);
+  }, [stage, scene]);
   useEffect(() => {
     if (shot) stage?.setShot(shot);
   }, [stage, shot]);

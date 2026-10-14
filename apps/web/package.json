@@ -23,6 +23,9 @@
     "react-dom": "^19.3.0",
     "react-router": "^8.4.0",
     "three": "^0.186.1",
+    "three-gpu-pathtracer": "^0.0.27",
+    "three-mesh-bvh": "^0.9.16",
+    "xatlas-web": "^0.1.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {

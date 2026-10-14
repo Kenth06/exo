@@ -1,5 +1,5 @@
-import { Banner, Button, Checkbox, Meter, Select } from "@cloudflare/kumo";
-import { ANGLES, FILAMENTS, MAX_ANGLES, PLATFORMS, resolveFilament, TEMPLATES } from "@exo/shared";
+import { Banner, Button, Checkbox, Meter, Select, Tabs } from "@cloudflare/kumo";
+import { ANGLES, FILAMENTS, MAX_ANGLES, PLATFORMS, type RenderQuality, resolveFilament, TEMPLATES } from "@exo/shared";
 import { DownloadSimpleIcon, XIcon } from "@phosphor-icons/react";
 import { useMemo } from "react";
 import { FilamentPicker } from "@/components/filament/FilamentPicker";
@@ -12,7 +12,7 @@ import { imageJobs, type ImageJob } from "@/lib/editor/jobs";
 interface PhotosPanelProps {
   editor: Editor;
   queue: QueueState;
-  onRender: (jobs: ImageJob[]) => void;
+  onRender: (jobs: ImageJob[], quality: RenderQuality) => void;
   onCancel: () => void;
 }
 
@@ -25,6 +25,23 @@ export const PhotosPanel = ({ editor, queue, onRender, onCancel }: PhotosPanelPr
 
   return (
     <div className="space-y-6">
+      <section>
+        <h3 className="mb-2 text-sm font-medium">Quality</h3>
+        <Tabs
+          value={settings.quality}
+          onValueChange={(v) => update({ quality: v as RenderQuality })}
+          tabs={[
+            { value: "photo", label: "Photo" },
+            { value: "fast", label: "Fast" },
+          ]}
+        />
+        <p className="mt-2 text-xs exo-fg-soft">
+          {settings.quality === "photo"
+            ? "Path traced: real light bounce, soft shadows and depth of field. About a minute per image."
+            : "The live preview at full size. A few seconds per image."}
+        </p>
+      </section>
+
       <Select
         label="Template"
         placeholder="Start from a template"
@@ -122,7 +139,7 @@ export const PhotosPanel = ({ editor, queue, onRender, onCancel }: PhotosPanelPr
             variant="primary"
             className="w-full"
             disabled={!ready || jobs.length === 0}
-            onClick={() => onRender(jobs)}
+            onClick={() => onRender(jobs, settings.quality)}
           >
             Render {jobs.length} {jobs.length === 1 ? "image" : "images"}
           </Button>

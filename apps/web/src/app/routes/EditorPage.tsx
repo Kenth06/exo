@@ -38,7 +38,9 @@ export const EditorPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stage, parts]);
   useEffect(() => stage?.setColors(settings.partColors), [stage, settings.partColors]);
-  useEffect(() => stage?.setScene(settings.scene), [stage, settings.scene]);
+  useEffect(() => {
+    void stage?.setScene(settings.scene);
+  }, [stage, settings.scene]);
   useEffect(() => {
     if (!stage || queue.state.running) return;
     const angle = ANGLES.find((a) => a.id === previewAngle) ?? ANGLES[0]!;

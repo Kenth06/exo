@@ -34,7 +34,8 @@ import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { frameBox, type Shot } from "./camera";
 import type { LoadedPart } from "./loader-types";
 import { applyFilament, filamentMaterial } from "./materials";
-import { type BuiltScene, buildScene } from "./scenes";
+import type { HdriId } from "./assets";
+import { type BuiltScene, buildScene, loadSceneAssets, SCENE_SPECS, type SceneAssets } from "./scenes";
 
 const PART_GAP_MM = 14;
 /** Preview resolution cap; final captures set their own size. */
@@ -62,7 +63,13 @@ export class Stage {
   private readonly composer: EffectComposer;
   private readonly gtao: GTAOPass;
   private readonly controls: OrbitControls | null;
-  private readonly env: Texture;
+  private readonly pmrem: PMREMGenerator;
+  private readonly fallbackEnv: Texture;
+  private readonly envCache = new Map<HdriId, Texture>();
+  private assets: SceneAssets | null = null;
+  private loadToken = 0;
+  private ready: Promise<void> = Promise.resolve();
+  private photoMode = false;
   private readonly model = new Group();
   private readonly clip = new Plane(new Vector3(0, -1, 0), Infinity);
   private parts: PartView[] = [];
@@ -98,10 +105,10 @@ export class Stage {
     this.renderer.localClippingEnabled = true;
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, PREVIEW_MAX_DPR));
 
-    const pmrem = new PMREMGenerator(this.renderer);
-    this.env = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-    pmrem.dispose();
-    this.scene.environment = this.env;
+    this.pmrem = new PMREMGenerator(this.renderer);
+    // Neutral studio light until the scene's HDRI has downloaded.
+    this.fallbackEnv = this.pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    this.scene.environment = this.fallbackEnv;
     this.scene.add(this.model);
 
     const target = new WebGLRenderTarget(1, 1, { type: HalfFloatType, samples: 4 });
@@ -120,7 +127,7 @@ export class Stage {
       this.controls.addEventListener("change", () => (this.dirty = true));
     }
 
-    this.applyScene();
+    this.ready = this.loadScene();
     this.resizeObserver = new ResizeObserver(() => this.resizeToCanvas());
     this.resizeObserver.observe(canvas);
     this.resizeToCanvas();
@@ -156,7 +163,10 @@ export class Stage {
       for (const lm of part.meshes) {
         const g = new BufferGeometry();
         g.setAttribute("position", new BufferAttribute(lm.positions, 3));
-        g.setAttribute("normal", new BufferAttribute(lm.normals, 3, true));
+        // Float normals: the path tracer merges every mesh into one geometry and needs matching attribute types.
+        const normals = new Float32Array(lm.normals.length);
+        for (let n = 0; n < normals.length; n++) normals[n] = lm.normals[n]! / 32767;
+        g.setAttribute("normal", new BufferAttribute(normals, 3));
         g.setIndex(new BufferAttribute(lm.indices, 1));
         g.computeBoundingBox();
         g.computeBoundingSphere();
@@ -184,16 +194,45 @@ export class Stage {
       for (const [tool, mesh] of p.meshes) {
         const f: Filament = resolveFilament(colors[i]?.[tool] ?? colors[i]?.[0] ?? "");
         applyFilament(mesh.material, f);
+        if (this.photoMode) mesh.material.sheen = 0;
       }
     });
     this.dirty = true;
   }
 
   setScene(id: string) {
-    if (id === this.sceneId && this.built) return;
+    if (id === this.sceneId && (this.built || this.loadToken > 0)) return this.ready;
     this.sceneId = id;
-    this.applyScene();
-    this.reframe();
+    this.ready = this.loadScene();
+    return this.ready;
+  }
+
+  /** Resolves once the current scene's HDRI and surfaces are loaded and built. Await before capturing. */
+  whenReady() {
+    return this.ready;
+  }
+
+  private async loadScene() {
+    const token = ++this.loadToken;
+    const spec = SCENE_SPECS[this.sceneId] ?? SCENE_SPECS["white-sweep"]!;
+    try {
+      const assets = await loadSceneAssets(spec);
+      if (token !== this.loadToken || this.disposed) return;
+      this.assets = assets;
+      this.applyScene();
+      this.reframe();
+    } catch (e) {
+      console.error("scene assets failed to load", e);
+    }
+  }
+
+  private environmentFor(id: HdriId, texture: Texture) {
+    let env = this.envCache.get(id);
+    if (!env) {
+      env = this.pmrem.fromEquirectangular(texture).texture;
+      this.envCache.set(id, env);
+    }
+    return env;
   }
 
   setShot(shot: Shot) {
@@ -211,6 +250,40 @@ export class Stage {
     this.dirty = true;
   }
 
+  /** What the path tracer needs to render the scene exactly as previewed. */
+  photoContext() {
+    const box = this.modelBox();
+    return {
+      scene: this.scene,
+      box,
+      fov: this.camera.fov,
+      exposure: this.renderer.toneMappingExposure,
+      /** Equirect environment (the path tracer samples it directly) and HDRI-only lighting. */
+      enterPhotoMode: () => {
+        const env = this.scene.environment;
+        const lights = this.built?.lights ?? [];
+        if (this.assets) this.scene.environment = this.assets.hdri.texture;
+        for (const l of lights) l.visible = false;
+        this.photoMode = true;
+        // Sheen fakes a matte fuzz in raster; path traced it only adds fireflies, and diffuse GI covers it.
+        const sheen = new Map<MeshPhysicalMaterial, number>();
+        for (const p of this.parts) {
+          for (const m of p.meshes.values()) {
+            sheen.set(m.material, m.material.sheen);
+            m.material.sheen = 0;
+          }
+        }
+        return () => {
+          this.scene.environment = env;
+          for (const l of lights) l.visible = true;
+          for (const [m, v] of sheen) m.sheen = v;
+          this.photoMode = false;
+          this.dirty = true;
+        };
+      },
+    };
+  }
+
   modelBox() {
     this.box ??= new Box3().setFromObject(this.model);
     return this.box.clone();
@@ -221,6 +294,7 @@ export class Stage {
   }
 
   private applyScene() {
+    if (!this.assets) return;
     if (this.built) {
       this.scene.remove(this.built.group);
       this.built.dispose();
@@ -228,9 +302,15 @@ export class Stage {
     this.box = null;
     const raw = new Box3().setFromObject(this.model);
     const size = raw.isEmpty() ? new Vector3(60, 80, 60) : raw.getSize(new Vector3());
-    this.built = buildScene(this.sceneId, Math.max(size.x, size.z), size.y);
+    const spec = SCENE_SPECS[this.sceneId] ?? SCENE_SPECS["white-sweep"]!;
+    this.built = buildScene(spec, this.assets, Math.max(size.x, size.z), size.y);
     this.scene.add(this.built.group);
+    this.scene.environment = this.environmentFor(spec.hdri, this.assets.hdri.texture);
+    this.scene.environmentRotation.copy(this.built.rotation);
     this.scene.background = this.built.background;
+    this.scene.backgroundBlurriness = this.built.backgroundBlurriness;
+    this.scene.backgroundIntensity = this.built.backgroundIntensity;
+    this.scene.backgroundRotation.copy(this.built.rotation);
     this.scene.environmentIntensity = this.built.spec.envIntensity;
     this.renderer.toneMappingExposure = this.built.spec.exposure;
     this.model.position.y = this.built.lift;
@@ -379,7 +459,9 @@ export class Stage {
         m.material.dispose();
       }
     }
-    this.env.dispose();
+    this.fallbackEnv.dispose();
+    for (const t of this.envCache.values()) t.dispose();
+    this.pmrem.dispose();
     this.composer.dispose();
     this.renderer.dispose();
   }

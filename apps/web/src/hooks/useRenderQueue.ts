@@ -1,8 +1,16 @@
-import { ANGLES, type MotionId, type ProjectSettings, resolveFilament, type VideoAspect } from "@exo/shared";
+import {
+  ANGLES,
+  type MotionId,
+  type ProjectSettings,
+  type RenderQuality,
+  resolveFilament,
+  type VideoAspect,
+} from "@exo/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { renderService } from "@/lib/client/services/render.service";
 import type { ImageJob } from "@/lib/editor/jobs";
 import { shotFor } from "@/lib/engine/camera";
+import { type PhotoProgress, PhotoSession } from "@/lib/engine/photo";
 import type { Stage } from "@/lib/engine/stage";
 import { recordVideo } from "@/lib/engine/video";
 
@@ -27,7 +35,7 @@ const tick = () => new Promise((r) => setTimeout(r, 0));
 
 /** Put the preview back to the project settings after a batch changed scenes and colors. */
 const restore = (stage: Stage, settings: ProjectSettings) => {
-  stage.setScene(settings.scene);
+  void stage.setScene(settings.scene);
   stage.setColors(settings.partColors);
 };
 
@@ -44,21 +52,49 @@ export const useRenderQueue = (stage: Stage | null, projectId: string, settings:
   });
 
   const runImages = useCallback(
-    async (jobs: ImageJob[]) => {
-      if (!stage || jobs.length === 0) return;
+    async (input: ImageJob[], quality: RenderQuality = "photo") => {
+      if (!stage || input.length === 0) return;
       cancelled.current = false;
       resultsRef.current.forEach((r) => URL.revokeObjectURL(r.url));
+      // Group by scene so a photo batch rebuilds the path tracer's BVH once per backdrop.
+      const jobs = input.toSorted((a, b) => a.scene.localeCompare(b.scene));
       setState({ ...IDLE, running: true, total: jobs.length });
       const results: RenderedFile[] = [];
+      let session: PhotoSession | null = null;
+      let sessionScene: string | null = null;
+      let sessionColors = "";
       try {
         for (const [i, job] of jobs.entries()) {
           if (cancelled.current) break;
           setState((s) => ({ ...s, current: job.label }));
           await tick();
-          stage.setScene(job.scene);
+          await stage.setScene(job.scene);
           stage.setColors(job.colors);
           const angle = ANGLES.find((a) => a.id === job.angle)!;
-          const blob = await stage.capture(job.width, job.height, shotFor(angle));
+          let blob: Blob;
+          if (quality === "photo") {
+            const label = job.label;
+            const progress: PhotoProgress = (f, phase) =>
+              setState((s) => ({
+                ...s,
+                current:
+                  phase === "building"
+                    ? `Preparing the scene · ${Math.round(f * 100)}%`
+                    : `${label} · ${Math.round(f * 100)}%`,
+              }));
+            if (!session) {
+              session = await PhotoSession.create(stage, progress);
+            } else if (sessionScene !== job.scene) {
+              await session.rebuild(progress);
+            } else if (sessionColors !== JSON.stringify(job.colors)) {
+              session.updateMaterials();
+            }
+            sessionScene = job.scene;
+            sessionColors = JSON.stringify(job.colors);
+            blob = await session.render(job.width, job.height, shotFor(angle), { samples: 256, onProgress: progress });
+          } else {
+            blob = await stage.capture(job.width, job.height, shotFor(angle));
+          }
           await renderService.save(blob, {
             kind: "image",
             label: job.label,
@@ -76,6 +112,7 @@ export const useRenderQueue = (stage: Stage | null, projectId: string, settings:
       } catch (e) {
         setState((s) => ({ ...s, error: e instanceof Error ? e.message : "Rendering failed." }));
       } finally {
+        session?.dispose();
         restore(stage, settingsRef.current);
         setState((s) => ({ ...s, running: false, current: null }));
       }
@@ -91,6 +128,7 @@ export const useRenderQueue = (stage: Stage | null, projectId: string, settings:
       try {
         const current = settingsRef.current;
         restore(stage, current);
+        await stage.whenReady();
         const angle = ANGLES.find((a) => a.id === opts.angle) ?? ANGLES[0]!;
         const blob = await recordVideo(stage, {
           motion: opts.motion,
