@@ -1,0 +1,13 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+# Flat node_modules: wrangler, the Cloudflare Vite plugin and vitest-pool-workers break on .pnpm symlinks on Windows.
+nodeLinker: hoisted
+# esbuild and workerd need their postinstall to fetch native binaries.
+dangerouslyAllowAllBuilds: true
+# Skip pnpm's deps-status check before `pnpm run/exec`: on Node 25 it crashes or hangs ("readStream must be readable").
+verifyDepsBeforeRun: false
+minimumReleaseAgeExclude:
+  - "@cloudflare/vitest-plugin@1.4.2"
+  - miniflare@5.20261012.0-beta
+  - wrangler@4.151.0

@@ -1,0 +1,12 @@
+node_modules
+dist
+.wrangler
+.turbo
+.dev.vars
+.env*
+!.dev.vars.example
+coverage
+*.tsbuildinfo
+.DS_Store
+*.pem
+.rea

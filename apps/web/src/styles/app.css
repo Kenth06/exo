@@ -1,0 +1,92 @@
+@source "../../../../node_modules/@cloudflare/kumo/dist/**/*.{js,jsx,ts,tsx}";
+@import "@cloudflare/kumo/styles/tailwind";
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-mode="dark"], [data-mode="dark"] *));
+
+@theme {
+  --font-sans: "Inter Tight", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+/*
+ * One accent for the whole product: the terracotta of a matte PLA spool. Kumo's primary buttons,
+ * focus rings and selection read from these tokens. White text on it passes WCAG AA (5.4:1).
+ */
+:root {
+  --color-kumo-brand: oklch(0.55 0.15 42);
+  --color-kumo-brand-hover: oklch(0.49 0.14 42);
+  --exo-accent: oklch(0.55 0.15 42);
+  --exo-bg: oklch(0.97 0.006 80);
+  --exo-surface: oklch(0.94 0.008 80);
+  --exo-fg: oklch(0.22 0.01 60);
+  --exo-fg-soft: oklch(0.47 0.012 60);
+  --exo-line: oklch(0.22 0.01 60 / 0.12);
+  --exo-outline: oklch(0 0 0 / 0.1);
+}
+
+[data-mode="dark"] {
+  --color-kumo-brand: oklch(0.62 0.15 42);
+  --color-kumo-brand-hover: oklch(0.67 0.14 42);
+  --exo-accent: oklch(0.68 0.14 42);
+  --exo-bg: oklch(0.17 0.006 60);
+  --exo-surface: oklch(0.21 0.007 60);
+  --exo-fg: oklch(0.94 0.008 80);
+  --exo-fg-soft: oklch(0.72 0.01 70);
+  --exo-line: oklch(0.94 0.008 80 / 0.12);
+  --exo-outline: oklch(1 0 0 / 0.1);
+}
+
+html,
+body {
+  background: var(--exo-bg);
+  color: var(--exo-fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+p,
+li,
+dd {
+  text-wrap: pretty;
+}
+
+.exo-bg {
+  background: var(--exo-bg);
+}
+.exo-surface {
+  background: var(--exo-surface);
+}
+.exo-fg-soft {
+  color: var(--exo-fg-soft);
+}
+.exo-border {
+  border-color: var(--exo-line);
+}
+.exo-outline {
+  outline: 1px solid var(--exo-outline);
+  outline-offset: -1px;
+}
+
+/* Hide the scrollbar on horizontal chip rows; they stay scrollable by touch, wheel and keyboard. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

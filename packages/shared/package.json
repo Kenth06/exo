@@ -1,0 +1,15 @@
+{
+  "name": "@exo/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit -p ."
+  },
+  "devDependencies": {
+    "@exo/typescript-config": "workspace:*"
+  }
+}

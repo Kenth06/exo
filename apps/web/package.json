@@ -1,0 +1,40 @@
+{
+  "name": "web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite build && wrangler dev --port 8788",
+    "deploy": "vite build && wrangler deploy",
+    "check-types": "tsc --noEmit -p . && tsc --noEmit -p worker",
+    "cf-typegen": "wrangler types worker/worker-configuration.d.ts"
+  },
+  "dependencies": {
+    "@cloudflare/kumo": "^2.14.0",
+    "@exo/gcode": "workspace:*",
+    "@exo/shared": "workspace:*",
+    "@phosphor-icons/react": "^2.1.10",
+    "echarts": "^6.1.0",
+    "fflate": "^0.8.3",
+    "mp4-muxer": "^5.2.2",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-router": "^8.4.0",
+    "three": "^0.186.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261013.1",
+    "@exo/typescript-config": "workspace:*",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@types/three": "^0.186.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "tailwindcss": "^4.3.3",
+    "vite": "^8.3.4",
+    "wrangler": "^4.150.0"
+  }
+}

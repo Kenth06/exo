@@ -1,0 +1,4 @@
+{
+  "description": "Local-only test account for wrangler dev (http://localhost:5173). Never use in production.",
+  "users": [{ "email": "maker@exo.test", "password": "layer-lines-0.2mm" }]
+}
